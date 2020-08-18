@@ -27,8 +27,7 @@ android {
                 // project directory:
 //                install "-r", "requirements.txt"
                 install "pydub"
-                install "keras"
-                install "sklearn"
+
                 install "numpy"
                 install "scipy"
             }

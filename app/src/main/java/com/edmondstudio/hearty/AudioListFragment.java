@@ -1,6 +1,7 @@
 package com.edmondstudio.hearty;
 
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 
@@ -12,13 +13,18 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
@@ -45,6 +51,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     //UI Elements
     private ImageButton playBtn;
+    private Button denoiseBtn;
     private TextView playerHeader;
     private TextView playerFilename;
 
@@ -52,9 +59,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private Handler seekbarHandler;
     private Runnable updateSeekbar;
 
-    public AudioListFragment() {
-        // Required empty public constructor
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -72,6 +76,9 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         audioList = view.findViewById(R.id.audio_list_view);
 
         playBtn = view.findViewById(R.id.player_play_btn);
+
+        denoiseBtn = view.findViewById(R.id.denoise_btn);
+
         playerHeader = view.findViewById(R.id.player_header_title);
         playerFilename = view.findViewById(R.id.player_filename);
 
@@ -114,6 +121,20 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             }
         });
 
+        denoiseBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("Info","Denoising");
+
+                Intent intent = new Intent(getActivity(), PyActivity.class);
+                startActivity(intent);
+
+                if(isPlaying){
+                    stopAudio();
+                }
+            }
+        });
+
         playerSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -145,6 +166,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             playAudio(fileToPlay);
         }
     }
+
+
 
     private void pauseAudio() {
         mediaPlayer.pause();
