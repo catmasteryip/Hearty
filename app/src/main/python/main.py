@@ -31,3 +31,4 @@ def denoising(sound_path):
     denoised_wav = AudioSegment.from_file(denoised_path, format='wav')
     denoised_wav = denoised_wav.apply_gain(-denoised_wav.max_dBFS)
     denoised_wav.export(mp3_path, format="mp3")
+    return mp3_path

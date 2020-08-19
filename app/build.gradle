@@ -27,9 +27,13 @@ android {
                 // project directory:
 //                install "-r", "requirements.txt"
                 install "pydub"
-
+                install "sklearn"
+                // default keras requires tensorflow 2.2, which chaquopy does not support yet, fall back to keras==2.3.1
+                install "keras==2.3.1"
+                install "tensorflow"
                 install "numpy"
                 install "scipy"
+                options "--timeout", "1000"
             }
         }
     }

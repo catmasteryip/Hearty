@@ -125,13 +125,32 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             @Override
             public void onClick(View v) {
                 Log.i("Info","Denoising");
-
-                Intent intent = new Intent(getActivity(), PyActivity.class);
-                startActivity(intent);
-
                 if(isPlaying){
                     stopAudio();
                 }
+                runpython();
+            }
+            public void runpython(){
+                // new thread is added because tensorflow is too much to run on one thread
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(! Python.isStarted()){
+//                            Log.i("Info", "Starting chaquopy");
+                            Python.start(new AndroidPlatform(getActivity()));
+//                            Log.i("Info", "Chaquopy has started");
+                        }else{
+//                            Log.i("Info", "Chaquopy is already in");
+                        }
+                        Python py = Python.getInstance();
+                        PyObject main = py.getModule("main");
+                        String original_track_path = fileToPlay.getAbsolutePath();
+                        PyObject denoised_pypath = main.callAttr("denoising",original_track_path);
+                        String denoised_path = denoised_pypath.toString();
+                        Log.i("Info","Denoised track is at " + denoised_path);
+
+                    }
+                }).start();
             }
         });
 
