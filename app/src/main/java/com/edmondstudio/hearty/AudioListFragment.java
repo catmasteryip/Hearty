@@ -22,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.arthenica.mobileffmpeg.FFmpeg;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
@@ -126,11 +127,22 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             public void onClick(View v) {
                 Log.i("Info","Denoising");
                 if(isPlaying){
-                    stopAudio();
+                    pauseAudio();
                 }
-                runpython();
+                // Use ffmpeg to convert 3gp into wav
+                Log.i("Info","Getting original track at  "+fileToPlay.getAbsolutePath());
+                String original_3gp_path = fileToPlay.getAbsolutePath();
+                String original_wav_path = original_3gp_path.replace("3gp","wav");
+                // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
+                FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
+                // run python denoiser
+                String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
+                Log.i("Info"," " + denoised_wav_path);
+//                runpython also includes resultant audio conversion;
+                runpython(original_wav_path);
             }
-            public void runpython(){
+
+            public void runpython(final String wav_path){
                 // new thread is added because tensorflow is too much to run on one thread
                 new Thread(new Runnable() {
                     @Override
@@ -144,11 +156,17 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
                         }
                         Python py = Python.getInstance();
                         PyObject main = py.getModule("main");
-                        String original_track_path = fileToPlay.getAbsolutePath();
-                        PyObject denoised_pypath = main.callAttr("denoising",original_track_path);
-                        String denoised_path = denoised_pypath.toString();
-                        Log.i("Info","Denoised track is at " + denoised_path);
+//                        String original_track_path = fileToPlay.getAbsolutePath();
+//                        Denoising takes place
+                        PyObject denoised_pypath = main.callAttr("denoising",wav_path);
+                        String denoised_wav_path = denoised_pypath.toString();
+//                        Denoised
+                        Log.i("Info","Denoised wav track is at " + denoised_wav_path);
 
+                        String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
+                        // Use ffmpeg to convert wav into mp3/3gp
+                        FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a loudnorm "+denoised_mp3_path);
+                        Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
                     }
                 }).start();
             }
@@ -177,7 +195,9 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     @Override
     public void onClickListener(File file, int position) {
+        Log.i("Info","state: "+isPlaying);
         fileToPlay = file;
+        Log.i("Info","path of playing track: "+fileToPlay);
         if(isPlaying){
             stopAudio();
             playAudio(fileToPlay);
@@ -211,6 +231,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playerHeader.setText("Stopped");
         isPlaying = false;
         mediaPlayer.stop();
+        mediaPlayer.reset();
+//        mediaPlayer.release();
         seekbarHandler.removeCallbacks(updateSeekbar);
     }
 
@@ -219,9 +241,15 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         mediaPlayer = new MediaPlayer();
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         try {
+            mediaPlayer.reset();
             mediaPlayer.setDataSource(fileToPlay.getAbsolutePath());
+            Log.i("Info","data source set at: "+fileToPlay.getAbsolutePath());
+            // mediaplayer failed to prepare for denoised .wav file
+//            https://stackoverflow.com/questions/11540076/android-mediaplayer-error-1-2147483648
             mediaPlayer.prepare();
+            Log.i("Info","mediaplayer prepared");
             mediaPlayer.start();
+            Log.i("Info","mediaplayer started");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -235,6 +263,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             public void onCompletion(MediaPlayer mp) {
                 stopAudio();
                 playerHeader.setText("Finished");
+                // reset mediaplayer?
             }
         });
 

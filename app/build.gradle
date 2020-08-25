@@ -6,7 +6,9 @@ android {
     buildToolsVersion "29.0.2"
     defaultConfig {
         applicationId "com.edmondstudio.hearty"
-        minSdkVersion 21
+        // ffmpeg library asks me so
+        minSdkVersion 24
+
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -29,7 +31,8 @@ android {
                 install "pydub"
                 install "sklearn"
                 // default keras requires tensorflow 2.2, which chaquopy does not support yet, fall back to keras==2.3.1
-                install "keras==2.3.1"
+
+                install "keras==2.2.5"
                 install "tensorflow"
                 install "numpy"
                 install "scipy"
@@ -63,4 +66,6 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment:$nav_version"
     implementation "androidx.navigation:navigation-ui:$nav_version"
 
+    // workaround ffmpeg permission problem in Android sdk version 29
+    implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
 }
