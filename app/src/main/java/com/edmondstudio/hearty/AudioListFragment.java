@@ -122,55 +122,56 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             }
         });
 
-        denoiseBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i("Info","Denoising");
-                if(isPlaying){
-                    pauseAudio();
-                }
-                // Use ffmpeg to convert 3gp into wav
-                Log.i("Info","Getting original track at  "+fileToPlay.getAbsolutePath());
-                String original_3gp_path = fileToPlay.getAbsolutePath();
-                String original_wav_path = original_3gp_path.replace("3gp","wav");
-                // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
-                FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
-                // run python denoiser
-                String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
-                Log.i("Info"," " + denoised_wav_path);
-//                runpython also includes resultant audio conversion;
-                runpython(original_wav_path);
-            }
-
-            public void runpython(final String wav_path){
-                // new thread is added because tensorflow is too much to run on one thread
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(! Python.isStarted()){
-//                            Log.i("Info", "Starting chaquopy");
-                            Python.start(new AndroidPlatform(getActivity()));
-//                            Log.i("Info", "Chaquopy has started");
-                        }else{
-//                            Log.i("Info", "Chaquopy is already in");
-                        }
-                        Python py = Python.getInstance();
-                        PyObject main = py.getModule("main");
-//                        String original_track_path = fileToPlay.getAbsolutePath();
-//                        Denoising takes place
-                        PyObject denoised_pypath = main.callAttr("denoising",wav_path);
-                        String denoised_wav_path = denoised_pypath.toString();
-//                        Denoised
-                        Log.i("Info","Denoised wav track is at " + denoised_wav_path);
-
-                        String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
-                        // Use ffmpeg to convert wav into mp3/3gp
-                        FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a loudnorm "+denoised_mp3_path);
-                        Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
-                    }
-                }).start();
-            }
-        });
+//        denoiseBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//                if(isPlaying){
+//                    pauseAudio();
+//                }
+//                Log.i("Info","Denoising");
+//                // Use ffmpeg to convert 3gp into wav
+//                Log.i("Info","Getting original track at  "+fileToPlay.getAbsolutePath());
+//                String original_3gp_path = fileToPlay.getAbsolutePath();
+//                String original_wav_path = original_3gp_path.replace("3gp","wav");
+//                // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
+//                FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
+//                // run python denoiser
+//                String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
+//                Log.i("Info"," " + denoised_wav_path);
+////                runpython also includes resultant audio conversion;
+//                runpython(original_wav_path);
+//            }
+//
+//            public void runpython(final String wav_path){
+//                // new thread is added because tensorflow is too much to run on one thread
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        if(! Python.isStarted()){
+////                            Log.i("Info", "Starting chaquopy");
+//                            Python.start(new AndroidPlatform(getActivity()));
+////                            Log.i("Info", "Chaquopy has started");
+//                        }else{
+////                            Log.i("Info", "Chaquopy is already in");
+//                        }
+//                        Python py = Python.getInstance();
+//                        PyObject main = py.getModule("main");
+////                        String original_track_path = fileToPlay.getAbsolutePath();
+////                        Denoising takes place
+//                        PyObject denoised_pypath = main.callAttr("denoising",wav_path);
+//                        String denoised_wav_path = denoised_pypath.toString();
+////                        Denoised
+//                        Log.i("Info","Denoised wav track is at " + denoised_wav_path);
+//
+//                        String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
+//                        // Use ffmpeg to convert wav into mp3/3gp
+//                        FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a loudnorm "+denoised_mp3_path);
+//                        Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
+//                    }
+//                }).start();
+//            }
+//        });
 
         playerSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override

@@ -16,12 +16,18 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import com.arthenica.mobileffmpeg.FFmpeg;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -47,6 +53,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
     private MediaRecorder mediaRecorder;
     private String recordFile;
+    private String filePath;
 
     private Chronometer timer;
 
@@ -144,6 +151,49 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         mediaRecorder.stop();
         mediaRecorder.release();
         mediaRecorder = null;
+
+        // Run denoising
+        Log.i("Info","Denoising");
+        // Use ffmpeg to convert 3gp into wav
+        Log.i("Info","Getting original track at  "+filePath);
+        String original_3gp_path = filePath;
+        String original_wav_path = original_3gp_path.replace("3gp","wav");
+        // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
+        FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
+        // run python denoiser
+        String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
+        Log.i("Info"," " + denoised_wav_path);
+//        runpython also includes resultant audio conversion;
+        runpython(original_wav_path);
+    }
+
+    public void runpython(final String wav_path){
+        // new thread is added because tensorflow is too much to run on one thread
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(! Python.isStarted()){
+//                  Log.i("Info", "Starting chaquopy");
+                    Python.start(new AndroidPlatform(getActivity()));
+//                  Log.i("Info", "Chaquopy has started");
+                }else{
+//                  Log.i("Info", "Chaquopy is already in");
+                }
+                Python py = Python.getInstance();
+                PyObject main = py.getModule("main");
+//                  String original_track_path = fileToPlay.getAbsolutePath();
+//                  Denoising takes place
+                PyObject denoised_pypath = main.callAttr("denoising",wav_path);
+                String denoised_wav_path = denoised_pypath.toString();
+//                  Denoised
+                Log.i("Info","Denoised wav track is at " + denoised_wav_path);
+
+                String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
+                // Use ffmpeg to convert wav into mp3/3gp
+                FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=10dB' "+denoised_mp3_path);
+                Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
+            }
+        }).start();
     }
 
     private void startRecording() {
@@ -162,12 +212,13 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         recordFile = "Recording_" + formatter.format(now) + ".3gp";
 
         filenameText.setText("Recording, File Name : " + recordFile);
+        filePath = recordPath + "/" + recordFile;
 
         //Setup Media Recorder for recording
         mediaRecorder = new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setOutputFile(recordPath + "/" + recordFile);
+        mediaRecorder.setOutputFile(filePath);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
         try {
