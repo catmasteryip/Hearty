@@ -21,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Chronometer;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -45,6 +46,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     private ImageButton listBtn;
     private ImageButton recordBtn;
     private TextView filenameText;
+    private EditText recordName;
 
     private boolean isRecording = false;
 
@@ -79,6 +81,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         recordBtn = view.findViewById(R.id.record_btn);
         timer = view.findViewById(R.id.record_timer);
         filenameText = view.findViewById(R.id.record_filename);
+        recordName = view.findViewById(R.id.record_name);
 
         /* Setting up on click listener
            - Class must implement 'View.OnClickListener' and override 'onClick' method
@@ -118,25 +121,30 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                 break;
 
             case R.id.record_btn:
-                if(isRecording) {
-                    //Stop Recording
-                    stopRecording();
-
-                    // Change button image and set Recording state to false
-                    recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
-                    isRecording = false;
-                } else {
-                    //Check permission to record audio
-                    if(checkPermissions()) {
-                        //Start Recording
-                        startRecording();
+                if (recordName.getText().toString().length()==0){
+                    recordBtn.setEnabled(false);
+                }else {
+                    recordBtn.setEnabled(true);
+                    if (isRecording) {
+                        //Stop Recording
+                        stopRecording();
 
                         // Change button image and set Recording state to false
-                        recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
-                        isRecording = true;
+                        recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
+                        isRecording = false;
+                    } else {
+                        //Check permission to record audio
+                        if (checkPermissions()) {
+                            //Start Recording
+                            startRecording();
+
+                            // Change button image and set Recording state to false
+                            recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
+                            isRecording = true;
+                        }
                     }
+                    break;
                 }
-                break;
         }
     }
 
@@ -173,15 +181,11 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
             @Override
             public void run() {
                 if(! Python.isStarted()){
-//                  Log.i("Info", "Starting chaquopy");
                     Python.start(new AndroidPlatform(getActivity()));
-//                  Log.i("Info", "Chaquopy has started");
                 }else{
-//                  Log.i("Info", "Chaquopy is already in");
                 }
                 Python py = Python.getInstance();
                 PyObject main = py.getModule("main");
-//                  String original_track_path = fileToPlay.getAbsolutePath();
 //                  Denoising takes place
                 PyObject denoised_pypath = main.callAttr("denoising",wav_path);
                 String denoised_wav_path = denoised_pypath.toString();
@@ -190,7 +194,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
                 String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
                 // Use ffmpeg to convert wav into mp3/3gp
-                FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=10dB' "+denoised_mp3_path);
+                FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
                 Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
             }
         }).start();
@@ -205,11 +209,15 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         String recordPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
 
         //Get current date and time
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss", Locale.CANADA);
-        Date now = new Date();
+//        SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss", Locale.CANADA);
+//        Date now = new Date();
 
         //initialize filename variable with date and time at the end to ensure the new file wont overwrite previous file
-        recordFile = "Recording_" + formatter.format(now) + ".3gp";
+//        recordFile = "Recording_" + formatter.format(now) + ".3gp";
+
+
+        //initializez filename with text input recordName
+        recordFile = recordName.getText().toString() + ".3gp";
 
         filenameText.setText("Recording, File Name : " + recordFile);
         filePath = recordPath + "/" + recordFile;

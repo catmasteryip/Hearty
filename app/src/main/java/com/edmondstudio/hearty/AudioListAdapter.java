@@ -1,5 +1,7 @@
 package com.edmondstudio.hearty;
 
+import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,6 +50,7 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
         private ImageView list_image;
         private TextView list_title;
         private TextView list_date;
+        private ImageView bin_image;
 
         public AudioViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -55,8 +58,19 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
             list_image = itemView.findViewById(R.id.list_image_view);
             list_title = itemView.findViewById(R.id.list_title);
             list_date = itemView.findViewById(R.id.list_date);
+            bin_image = itemView.findViewById(R.id.bin_view);
 
-            itemView.setOnClickListener(this);
+            list_image.setOnClickListener(this);
+            //delete tracks
+            bin_image.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View v) {
+                    File fdelete = new File(allFiles[getAdapterPosition()].toString());
+                    fdelete.delete();
+                    //refresh audio list
+                    AudioListFragment.refreshAdapter();
+                }
+            });
 
         }
 
