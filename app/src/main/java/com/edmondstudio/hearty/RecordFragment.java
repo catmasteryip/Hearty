@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.textclassifier.TextClassifierEvent;
 import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -50,7 +51,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     private EditText recordName;
 
     private boolean isRecording = false;
-    private boolean isDenoising = false;
+//    private boolean finishDenoising = false;
 
     private String recordPermission = Manifest.permission.RECORD_AUDIO;
     private int PERMISSION_CODE = 21;
@@ -127,22 +128,28 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                     recordBtn.setEnabled(false);
                 }else {
                     recordBtn.setEnabled(true);
+//                    Log.d("record_btn", "Recording? "+String.valueOf(isRecording));
                     if (isRecording) {
-                        //Stop Recording
-                        recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
-                        stopRecording();
-
                         // Change button image and set Recording state to false
+//                        Log.d("record_btn", "Stopped?");
+                        recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
                         isRecording = false;
+                        // lock the buttons
+                        listBtn.setEnabled(false);
+                        recordBtn.setEnabled(false);
+                        //Stop Recording
+                        try {
+                            stopRecording();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+
                     } else {
                         //Check permission to record audio
                         if (checkPermissions()) {
                             //Start Recording
                             startRecording();
-
-                            // Change button image and set Recording state to false
-                            recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
-                            isRecording = true;
                         }
                     }
                     break;
@@ -150,15 +157,14 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         }
     }
 
-    private void stopRecording() {
+    private void stopRecording() throws InterruptedException {
         //Stop Timer, very obvious
         timer.stop();
 
         //Change text on page to file saved
         filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
 
-        listBtn.setEnabled(false);
-        recordBtn.setEnabled(false);
+
         //Stop media recorder and set it to null for further use to record new audio
         mediaRecorder.stop();
         mediaRecorder.release();
@@ -176,27 +182,26 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
         Log.i("RecordFragment"," " + denoised_wav_path);
 //        runpython also includes resultant audio conversion;
-        Runnable runpython = new pythonRunnable(original_wav_path);
-        Thread pythonthread = new Thread(runpython);
-        pythonthread.start();
+        Thread pythonThread = new Thread(new pythonRunnable(original_wav_path));
+        pythonThread.start();
         try {
-            pythonthread.join();
-        } catch (InterruptedException e) {
+            pythonThread.join();
+        }catch(InterruptedException e){
             e.printStackTrace();
         }
+//        if finishDenoising
         filenameText.setText("Denoising Finished");
         listBtn.setEnabled(true);
         recordBtn.setEnabled(true);
     }
 
-    public class pythonRunnable implements Runnable {
+    public class pythonRunnable implements Runnable{
 
         private String wav_path;
-
-        //Constructor
         public pythonRunnable(String wav_path){
             this.wav_path = wav_path;
         }
+        @Override
         public void run() {
             if(! Python.isStarted()){
                 Python.start(new AndroidPlatform(getActivity()));
@@ -216,42 +221,43 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
             Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
         }
     }
-
     private void startRecording() {
-        //Start timer from 0
-        timer.setBase(SystemClock.elapsedRealtime());
-        timer.start();
-
-        //Get app external directory path
-        String appPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
-        //Get record path to make new folder
-//        String recordPath = appPath+"/"+recordName.getText().toString();
-//        File newFolder = new File(recordPath);
-//        if (!newFolder.mkdirs()){
-//            newFolder.mkdirs();
-//        }
-
         //initialize filename with text input recordName
         recordFile = recordName.getText().toString() + ".3gp";
-
         filenameText.setText("Recording, File Name : " + recordFile);
+        //Check if file already exists, avoid name clash
+        //Get app external directory path
+        String appPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
         filePath = appPath + "/" + recordFile;
+        File fileFile = new File(filePath);
 
-        //Setup Media Recorder for recording
-        mediaRecorder = new MediaRecorder();
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setOutputFile(filePath);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        try {
-            mediaRecorder.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (fileFile.exists()){
+            filenameText.setText("This file already exists \n Please input new filename or delete original file");
         }
+        else{
+            // Change button image and set Recording state to false
+            recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
+            isRecording = true;
+            //Start timer from 0
+            timer.setBase(SystemClock.elapsedRealtime());
+            timer.start();
 
-        //Start Recording
-        mediaRecorder.start();
+            //Setup Media Recorder for recording
+            mediaRecorder = new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            mediaRecorder.setOutputFile(filePath);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+            try {
+                mediaRecorder.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            //Start Recording
+            mediaRecorder.start();
+        }
     }
 
     private boolean checkPermissions() {
@@ -270,7 +276,11 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     public void onStop() {
         super.onStop();
         if(isRecording){
-            stopRecording();
+            try {
+                stopRecording();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
