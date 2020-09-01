@@ -30,6 +30,7 @@ import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -196,7 +197,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                 // Use ffmpeg to convert wav into mp3/3gp
                 FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
                 Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
-                filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
+//                filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
             }
         }).start();
     }
@@ -207,13 +208,19 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         timer.start();
 
         //Get app external directory path
-        String recordPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
+        String appPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
+        //Get record path to make new folder
+//        String recordPath = appPath+"/"+recordName.getText().toString();
+//        File newFolder = new File(recordPath);
+//        if (!newFolder.mkdirs()){
+//            newFolder.mkdirs();
+//        }
 
-        //initializez filename with text input recordName
+        //initialize filename with text input recordName
         recordFile = recordName.getText().toString() + ".3gp";
 
         filenameText.setText("Recording, File Name : " + recordFile);
-        filePath = recordPath + "/" + recordFile;
+        filePath = appPath + "/" + recordFile;
 
         //Setup Media Recorder for recording
         mediaRecorder = new MediaRecorder();

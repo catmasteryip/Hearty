@@ -17,7 +17,6 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
 
     private TimeAgo timeAgo;
     private ArrayList<File> fileArrayList;
-    private ArrayList<String> timeList;
     private onItemListClick onItemListClick;
 
     //constructor
