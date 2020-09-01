@@ -23,6 +23,8 @@ import android.widget.TextView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -80,7 +82,12 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
         String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
         directory = new File(path);
-        fileArray = directory.listFiles();
+        fileArray = directory.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.toLowerCase().endsWith(".3gp") || name.toLowerCase().endsWith(".mp3");
+            }
+        });
+
         fileArrayList = new ArrayList<File>();
         if (fileArray!=null){
             for (int i = 0; i < fileArray.length; i++) {

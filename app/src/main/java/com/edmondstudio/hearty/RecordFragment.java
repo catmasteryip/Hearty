@@ -50,6 +50,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     private EditText recordName;
 
     private boolean isRecording = false;
+    private boolean isDenoising = false;
 
     private String recordPermission = Manifest.permission.RECORD_AUDIO;
     private int PERMISSION_CODE = 21;
@@ -128,10 +129,10 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                     recordBtn.setEnabled(true);
                     if (isRecording) {
                         //Stop Recording
+                        recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
                         stopRecording();
 
                         // Change button image and set Recording state to false
-                        recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
                         isRecording = false;
                     } else {
                         //Check permission to record audio
@@ -156,10 +157,13 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         //Change text on page to file saved
         filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
 
+        listBtn.setEnabled(false);
+        recordBtn.setEnabled(false);
         //Stop media recorder and set it to null for further use to record new audio
         mediaRecorder.stop();
         mediaRecorder.release();
         mediaRecorder = null;
+        filenameText.setText("Denoising. Please wait");
 
         // Run denoising
         Log.i("RecordFragment","Denoising");
@@ -169,37 +173,48 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         String original_wav_path = original_3gp_path.replace("3gp","wav");
         // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
         FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
-        // run python denoiser
         String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
         Log.i("RecordFragment"," " + denoised_wav_path);
 //        runpython also includes resultant audio conversion;
-        runpython(original_wav_path);
+        Runnable runpython = new pythonRunnable(original_wav_path);
+        Thread pythonthread = new Thread(runpython);
+        pythonthread.start();
+        try {
+            pythonthread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        filenameText.setText("Denoising Finished");
+        listBtn.setEnabled(true);
+        recordBtn.setEnabled(true);
     }
 
-    public void runpython(final String wav_path){
-        // new thread is added because tensorflow is too much to run on one thread
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(! Python.isStarted()){
-                    Python.start(new AndroidPlatform(getActivity()));
-                }else{
-                }
-                Python py = Python.getInstance();
-                PyObject main = py.getModule("main");
-//                  Denoising takes place
-                PyObject denoised_pypath = main.callAttr("denoising",wav_path);
-                String denoised_wav_path = denoised_pypath.toString();
-//                  Denoised
-                Log.i("Info","Denoised wav track is at " + denoised_wav_path);
+    public class pythonRunnable implements Runnable {
 
-                String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
-                // Use ffmpeg to convert wav into mp3/3gp
-                FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
-                Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
-//                filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
+        private String wav_path;
+
+        //Constructor
+        public pythonRunnable(String wav_path){
+            this.wav_path = wav_path;
+        }
+        public void run() {
+            if(! Python.isStarted()){
+                Python.start(new AndroidPlatform(getActivity()));
+            }else{
             }
-        }).start();
+            Python py = Python.getInstance();
+            PyObject main = py.getModule("main");
+//                  Denoising takes place
+            PyObject denoised_pypath = main.callAttr("denoising",this.wav_path);
+            String denoised_wav_path = denoised_pypath.toString();
+//                  Denoised
+            Log.i("Info","Denoised wav track is at " + denoised_wav_path);
+
+            String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
+            // Use ffmpeg to convert wav into mp3/3gp
+            FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
+            Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
+        }
     }
 
     private void startRecording() {
