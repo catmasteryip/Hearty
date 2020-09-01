@@ -3,12 +3,14 @@ package com.edmondstudio.hearty;
 
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,6 +32,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 /**
@@ -41,9 +44,9 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private BottomSheetBehavior bottomSheetBehavior;
 
     private RecyclerView audioList;
-    private static File[] allFiles;
+    private File[] allFiles;
 
-    private static AudioListAdapter audioListAdapter;
+    private AudioListAdapter audioListAdapter;
 
     private MediaPlayer mediaPlayer = null;
     private boolean isPlaying = false;
@@ -58,12 +61,14 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private SeekBar playerSeekbar;
     private Handler seekbarHandler;
     private Runnable updateSeekbar;
-    private static File directory;
+    private File directory;
 
+//    transaction.add(R.id.fragment_container,)
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_audio_list, container, false);
     }
@@ -88,11 +93,19 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
         audioListAdapter = new AudioListAdapter(allFiles, this);
 
+//        public void fileListInstantiate(){
+//        fileList = new ArrayList<String>();
+//        if (allFiles.length>0){
+//            for (int i = 0; i < allFiles.length; i++) {
+//                String fileName = allFiles[i].getName();
+//                fileList.add(fileName);
+//            }
+//        }
+//        }
+
         audioList.setHasFixedSize(true);
         audioList.setLayoutManager(new LinearLayoutManager(getContext()));
         audioList.setAdapter(audioListAdapter);
-
-
 
         bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
@@ -143,10 +156,9 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     }
 
-    public static void refreshAdapter(){
-        allFiles = directory.listFiles();
-        audioListAdapter.notifyDataSetChanged();
-    };
+//    public static void refreshAdapter(){
+//        audioListAdapter.notifyDataSetChanged();
+//    }
 
 
     @Override
@@ -188,7 +200,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         isPlaying = false;
         mediaPlayer.stop();
         mediaPlayer.reset();
-//        mediaPlayer.release();
         seekbarHandler.removeCallbacks(updateSeekbar);
     }
 
@@ -219,7 +230,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             public void onCompletion(MediaPlayer mp) {
                 stopAudio();
                 playerHeader.setText("Finished");
-                // reset mediaplayer?
             }
         });
 
@@ -248,4 +258,5 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             stopAudio();
         }
     }
+//    public void set
 }
