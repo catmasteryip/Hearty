@@ -1,16 +1,13 @@
 package com.edmondstudio.hearty;
 
 
-import android.content.Intent;
 import android.media.MediaPlayer;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,15 +16,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.arthenica.mobileffmpeg.FFmpeg;
-import com.chaquo.python.PyObject;
-import com.chaquo.python.Python;
-import com.chaquo.python.android.AndroidPlatform;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
@@ -44,7 +36,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private BottomSheetBehavior bottomSheetBehavior;
 
     private RecyclerView audioList;
-    private File[] allFiles;
+    private File[] fileArray;
+    private ArrayList<File> fileArrayList;
 
     private AudioListAdapter audioListAdapter;
 
@@ -89,19 +82,16 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
         String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
         directory = new File(path);
-        allFiles = directory.listFiles();
+        fileArray = directory.listFiles();
+        fileArrayList = new ArrayList<File>();
+        if (fileArray!=null){
+            for (int i = 0; i < fileArray.length; i++) {
+//                String fileName = fileArray[i].getName();
+                fileArrayList.add(fileArray[i]);
+            }
+        }
 
-        audioListAdapter = new AudioListAdapter(allFiles, this);
-
-//        public void fileListInstantiate(){
-//        fileList = new ArrayList<String>();
-//        if (allFiles.length>0){
-//            for (int i = 0; i < allFiles.length; i++) {
-//                String fileName = allFiles[i].getName();
-//                fileList.add(fileName);
-//            }
-//        }
-//        }
+        audioListAdapter = new AudioListAdapter(fileArrayList, this);
 
         audioList.setHasFixedSize(true);
         audioList.setLayoutManager(new LinearLayoutManager(getContext()));

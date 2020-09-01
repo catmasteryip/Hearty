@@ -11,69 +11,63 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
-//import java.util.ArrayList;
 import java.util.ArrayList;
 
 public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.AudioViewHolder> {
-
-
-    private File[] allFiles;
+    
     private TimeAgo timeAgo;
-    private ArrayList<String> fileList;
+    private ArrayList<File> fileArrayList;
     private ArrayList<String> timeList;
     private onItemListClick onItemListClick;
 
     //constructor
-    public AudioListAdapter(File[] allFiles, onItemListClick onItemListClick) {
-        this.allFiles = allFiles;
-//        this.fileList = file2List(allFiles);
-//        this.timeList = lastModified2List(allFiles);
+    public AudioListAdapter(ArrayList<File> fileArrayList, onItemListClick onItemListClick) {
+        this.fileArrayList = fileArrayList;
         this.onItemListClick = onItemListClick;
     }
 
-//    public ArrayList<String> lastModified2List(File[] allFiles){
-//        ArrayList<String> timeList = new ArrayList<String>();
-//        if (allFiles.length>0){
-//            for (int i = 0; i < allFiles.length; i++) {
-//                String timeString = timeAgo.getTimeAgo(allFiles[i].lastModified());
-//                timeList.add(timeString);
-//                return timeList;
-//            }
-//        }
-//        return null;
-//    }
-//
-//    public ArrayList<String> file2List(File[] allFiles){
-//        ArrayList<String> fileList = new ArrayList<String>();
-//        if (allFiles.length>0){
-//            for (int i = 0; i < allFiles.length; i++) {
-//                String fileName = allFiles[i].getName();
-//                fileList.add(fileName);
-//                return fileList;
-//            }
-//        }
-//        return null;
-//    }
+    public ArrayList<String> lastModified2List(File[] allFiles){
+        ArrayList<String> timeList = new ArrayList<String>();
+        if (allFiles.length>0){
+            for (int i = 0; i < allFiles.length; i++) {
+                Log.d("timeString", String.valueOf(allFiles[i].lastModified()));
+                String timeString = String.valueOf(allFiles[i].lastModified());
+
+                timeList.add(timeString);
+            }
+        }
+        return timeList;
+    }
+
+    public ArrayList<String> file2List(File[] allFiles){
+        ArrayList<String> fileList = new ArrayList<String>();
+        if (allFiles.length>0){
+            for (int i = 0; i < allFiles.length; i++) {
+                String fileName = allFiles[i].getName();
+
+                fileList.add(fileName);
+            }
+        }
+        return fileList;
+    }
 
     @NonNull
     @Override
     public AudioViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.single_list_item, parent, false);
         timeAgo = new TimeAgo();
-//        instantiate arraylist based on allFiles
-//        fileListInstantiate();
         return new AudioViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull AudioViewHolder holder, int position) {
-        holder.list_title.setText(allFiles[position].getName());
-        holder.list_date.setText(timeAgo.getTimeAgo(allFiles[position].lastModified()));
+        holder.list_title.setText(fileArrayList.get(position).getName());
+        holder.list_date.setText(timeAgo.getTimeAgo(fileArrayList.get(position).lastModified()));
     }
 
     @Override
     public int getItemCount() {
-        return allFiles.length;
+        return fileArrayList.size();
     }
 
     public class AudioViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -97,14 +91,17 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
                 @Override
                 public void onClick(View v) {
                     int position = getAdapterPosition();
-                    File fdelete = new File(allFiles[position].toString());
-//                    allFiles.
+                    File fdelete = fileArrayList.get(position);
+
+                    Log.d("adapter pos", String.valueOf(position));
+                    Log.d("fileArrayList", "before removal"+String.valueOf(getItemCount()));
+                    Log.d("fileArrayList", "after removal"+String.valueOf(getItemCount()));
+
                     if (fdelete.delete()){
-                        Log.d("after deletion", String.valueOf(allFiles.length));
-//                        notifyItemRangeRemoved(position,1);
-                        notifyItemRemoved(position);
-//                        notifyDataSetChanged();
+                        Log.i("File", "File deleted");
+                        fileArrayList.remove(position);
                     };
+                    AudioListAdapter.super.notifyDataSetChanged();
                 }
             });
 
@@ -112,7 +109,7 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
 
         @Override
         public void onClick(View v) {
-            onItemListClick.onClickListener(allFiles[getAdapterPosition()], getAdapterPosition());
+            onItemListClick.onClickListener(fileArrayList.get(getAdapterPosition()), getAdapterPosition());
         }
     }
 
