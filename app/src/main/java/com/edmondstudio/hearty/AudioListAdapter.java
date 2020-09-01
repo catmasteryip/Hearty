@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.AudioViewHolder> {
-    
+
     private TimeAgo timeAgo;
     private ArrayList<File> fileArrayList;
     private ArrayList<String> timeList;
@@ -24,31 +24,6 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
     public AudioListAdapter(ArrayList<File> fileArrayList, onItemListClick onItemListClick) {
         this.fileArrayList = fileArrayList;
         this.onItemListClick = onItemListClick;
-    }
-
-    public ArrayList<String> lastModified2List(File[] allFiles){
-        ArrayList<String> timeList = new ArrayList<String>();
-        if (allFiles.length>0){
-            for (int i = 0; i < allFiles.length; i++) {
-                Log.d("timeString", String.valueOf(allFiles[i].lastModified()));
-                String timeString = String.valueOf(allFiles[i].lastModified());
-
-                timeList.add(timeString);
-            }
-        }
-        return timeList;
-    }
-
-    public ArrayList<String> file2List(File[] allFiles){
-        ArrayList<String> fileList = new ArrayList<String>();
-        if (allFiles.length>0){
-            for (int i = 0; i < allFiles.length; i++) {
-                String fileName = allFiles[i].getName();
-
-                fileList.add(fileName);
-            }
-        }
-        return fileList;
     }
 
     @NonNull

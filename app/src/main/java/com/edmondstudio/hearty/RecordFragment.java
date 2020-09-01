@@ -153,7 +153,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         timer.stop();
 
         //Change text on page to file saved
-        filenameText.setText("Recording Stopped, File Saved : " + recordFile);
+        filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
 
         //Stop media recorder and set it to null for further use to record new audio
         mediaRecorder.stop();
@@ -161,16 +161,16 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         mediaRecorder = null;
 
         // Run denoising
-        Log.i("Info","Denoising");
+        Log.i("RecordFragment","Denoising");
         // Use ffmpeg to convert 3gp into wav
-        Log.i("Info","Getting original track at  "+filePath);
+        Log.i("RecordFragment","Getting original track at  "+filePath);
         String original_3gp_path = filePath;
         String original_wav_path = original_3gp_path.replace("3gp","wav");
         // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
         FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
         // run python denoiser
         String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
-        Log.i("Info"," " + denoised_wav_path);
+        Log.i("RecordFragment"," " + denoised_wav_path);
 //        runpython also includes resultant audio conversion;
         runpython(original_wav_path);
     }
@@ -196,6 +196,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                 // Use ffmpeg to convert wav into mp3/3gp
                 FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
                 Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
+                filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
             }
         }).start();
     }
@@ -207,14 +208,6 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
         //Get app external directory path
         String recordPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
-
-        //Get current date and time
-//        SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss", Locale.CANADA);
-//        Date now = new Date();
-
-        //initialize filename variable with date and time at the end to ensure the new file wont overwrite previous file
-//        recordFile = "Recording_" + formatter.format(now) + ".3gp";
-
 
         //initializez filename with text input recordName
         recordFile = recordName.getText().toString() + ".3gp";

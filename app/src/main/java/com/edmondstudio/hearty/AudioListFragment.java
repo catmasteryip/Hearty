@@ -56,8 +56,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private Runnable updateSeekbar;
     private File directory;
 
-//    transaction.add(R.id.fragment_container,)
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -86,7 +84,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         fileArrayList = new ArrayList<File>();
         if (fileArray!=null){
             for (int i = 0; i < fileArray.length; i++) {
-//                String fileName = fileArray[i].getName();
                 fileArrayList.add(fileArray[i]);
             }
         }
@@ -145,11 +142,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         });
 
     }
-
-//    public static void refreshAdapter(){
-//        audioListAdapter.notifyDataSetChanged();
-//    }
-
 
     @Override
     public void onClickListener(File file, int position) {
@@ -248,5 +240,4 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             stopAudio();
         }
     }
-//    public void set
 }
