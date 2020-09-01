@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 /**
@@ -34,7 +36,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private BottomSheetBehavior bottomSheetBehavior;
 
     private RecyclerView audioList;
-    private File[] allFiles;
+    private File[] fileArray;
+    private ArrayList<File> fileArrayList;
 
     private AudioListAdapter audioListAdapter;
 
@@ -51,14 +54,12 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private SeekBar playerSeekbar;
     private Handler seekbarHandler;
     private Runnable updateSeekbar;
-
-    public AudioListFragment() {
-        // Required empty public constructor
-    }
+    private File directory;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_audio_list, container, false);
     }
@@ -78,10 +79,16 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playerSeekbar = view.findViewById(R.id.player_seekbar);
 
         String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
-        File directory = new File(path);
-        allFiles = directory.listFiles();
+        directory = new File(path);
+        fileArray = directory.listFiles();
+        fileArrayList = new ArrayList<File>();
+        if (fileArray!=null){
+            for (int i = 0; i < fileArray.length; i++) {
+                fileArrayList.add(fileArray[i]);
+            }
+        }
 
-        audioListAdapter = new AudioListAdapter(allFiles, this);
+        audioListAdapter = new AudioListAdapter(fileArrayList, this);
 
         audioList.setHasFixedSize(true);
         audioList.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -114,6 +121,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             }
         });
 
+
         playerSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -137,7 +145,9 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     @Override
     public void onClickListener(File file, int position) {
+        Log.i("Info","state: "+isPlaying);
         fileToPlay = file;
+        Log.i("Info","path of playing track: "+fileToPlay);
         if(isPlaying){
             stopAudio();
             playAudio(fileToPlay);
@@ -145,6 +155,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             playAudio(fileToPlay);
         }
     }
+
+
 
     private void pauseAudio() {
         mediaPlayer.pause();
@@ -169,6 +181,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playerHeader.setText("Stopped");
         isPlaying = false;
         mediaPlayer.stop();
+        mediaPlayer.reset();
         seekbarHandler.removeCallbacks(updateSeekbar);
     }
 
@@ -177,9 +190,15 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         mediaPlayer = new MediaPlayer();
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         try {
+            mediaPlayer.reset();
             mediaPlayer.setDataSource(fileToPlay.getAbsolutePath());
+            Log.i("Info","data source set at: "+fileToPlay.getAbsolutePath());
+            // mediaplayer failed to prepare for denoised .wav file
+//            https://stackoverflow.com/questions/11540076/android-mediaplayer-error-1-2147483648
             mediaPlayer.prepare();
+            Log.i("Info","mediaplayer prepared");
             mediaPlayer.start();
+            Log.i("Info","mediaplayer started");
         } catch (IOException e) {
             e.printStackTrace();
         }

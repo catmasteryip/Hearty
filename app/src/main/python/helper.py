@@ -1,14 +1,15 @@
+from os.path import dirname, join
 from scipy.io import wavfile
 
 import numpy as np
-import pandas as pd
 
 import mel
 from sklearn.preprocessing import MinMaxScaler
 
-from keras.models import Sequential, Model, load_model
-from sklearn.metrics import mean_squared_error
-
+# the model was trained in tf1
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.keras.models import load_model
+tf.disable_v2_behavior()
 
 def load_sound(filename):
     '''
@@ -17,16 +18,24 @@ def load_sound(filename):
             filename(str): directory of the .wav file
         Returns:
             sampling_rate(int): sampling rate
-            wave.T(list(int)): 
+            wave.T(list(int)): lengths of sound wave in seconds
     '''
     sampling_rate, wave = wavfile.read(filename)
+    # what is it for?
     assert (len(wave.T) > 4)
     return sampling_rate, wave.T
 
 
-def divide_single_wave_into_smaller_chunk(output_duration=3, wave=None, sampling_rate=None, thresh=True, shift=0):
+def divide_single_wave_into_smaller_chunk(output_duration=3, wave=None, sampling_rate=None, shift=0):
     '''
-        Divide single wave into chunks
+        Divide single wave into chunks of 3 seconds
+        Args:
+            output_duration(int): number of seconds of an output chunk
+            wave(ndarray): sound wave
+            sampling_rate(int): sampling rate in Hz
+            shift(int): ?
+        Returns:
+            wave_chunks(ndarray): wave chunks with length of output_duration (s)
     '''
     shift_abs = int(sampling_rate * shift)
     chunk_length = sampling_rate*output_duration
@@ -55,7 +64,7 @@ def audio2spec(filename):
     sr, wav = load_sound(filename)
 #     wav_chunks = []
 #     assert(sr == 8192)
-    chunks = divide_single_wave_into_smaller_chunk(4, wav, sr)
+    chunks = divide_single_wave_into_smaller_chunk(3, wav, sr)
 #     wav_chunks.append(chunks)
     c = chunks[0]
 #     for i, c in enumerate(chunks):
@@ -65,7 +74,10 @@ def audio2spec(filename):
 
 
 def transform(spectrogram):
-    model = load_model('models/32-16-16-32.hdf5')
+    # this is for chaquopy to know where the binary(ires) is, relative to src/main/python
+    model_path = join(dirname(__file__), '32-16-16-32.hdf5')
+
+    model = load_model(model_path)
 
     sp_reshaped = np.expand_dims(spectrogram, -1)
     sp_reshaped = np.expand_dims(sp_reshaped, axis=0)

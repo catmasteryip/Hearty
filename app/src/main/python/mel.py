@@ -1,8 +1,9 @@
 from scipy.io import wavfile
 from scipy.signal import butter, lfilter
 import numpy as np
-import pandas as pd
+
 import copy
+
 def butter_bandpass(lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
     low = lowcut / nyq
