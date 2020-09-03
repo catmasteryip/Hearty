@@ -82,11 +82,13 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
         String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
         directory = new File(path);
-        fileArray = directory.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.toLowerCase().endsWith(".3gp") || name.toLowerCase().endsWith(".mp3");
-            }
-        });
+        fileArray = directory.listFiles(
+//                new FilenameFilter() {
+//            public boolean accept(File dir, String name) {
+//                return name.toLowerCase().endsWith(".3gp") || name.toLowerCase().endsWith(".mp3");
+//            }
+//        }
+        );
         fileArray = directory.listFiles();
 
         fileArrayList = new ArrayList<File>();
@@ -177,7 +179,15 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         mediaPlayer.start();
         playBtn.setImageDrawable(getActivity().getResources().getDrawable(R.drawable.player_pause_btn, null));
         isPlaying = true;
-
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                stopAudio();
+                playerHeader.setText("Finished");
+                //reset mediaplayer
+                resetAudio(fileToPlay);
+            }
+        });
         updateRunnable();
         seekbarHandler.postDelayed(updateSeekbar, 0);
 
@@ -190,23 +200,25 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         isPlaying = false;
         mediaPlayer.stop();
         mediaPlayer.reset();
+        mediaPlayer.release();
+
         seekbarHandler.removeCallbacks(updateSeekbar);
     }
 
-    private void playAudio(File fileToPlay) {
+    private void playAudio(final File fileToPlay) {
 
         mediaPlayer = new MediaPlayer();
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         try {
-            mediaPlayer.reset();
+//            mediaPlayer.reset();
             mediaPlayer.setDataSource(fileToPlay.getAbsolutePath());
-            Log.i("Info","data source set at: "+fileToPlay.getAbsolutePath());
+//            Log.i("Info","data source set at: "+fileToPlay.getAbsolutePath());
             // mediaplayer failed to prepare for denoised .wav file, so .wav files would not be played on android
 //            https://stackoverflow.com/questions/11540076/android-mediaplayer-error-1-2147483648
             mediaPlayer.prepare();
-            Log.i("Info","mediaplayer prepared");
+//            Log.i("Info","mediaplayer prepared");
             mediaPlayer.start();
-            Log.i("Info","mediaplayer started");
+//            Log.i("Info","mediaplayer started");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -220,6 +232,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             public void onCompletion(MediaPlayer mp) {
                 stopAudio();
                 playerHeader.setText("Finished");
+                //reset mediaplayer
+                resetAudio(fileToPlay);
             }
         });
 
@@ -229,6 +243,23 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         updateRunnable();
         seekbarHandler.postDelayed(updateSeekbar, 0);
 
+    }
+
+    private void resetAudio(File fileToPlay){
+        playerSeekbar.setProgress(0);
+        mediaPlayer = new MediaPlayer();
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        try {
+//            mediaPlayer.reset();
+            mediaPlayer.setDataSource(fileToPlay.getAbsolutePath());
+//            Log.i("Info","data source set at: "+fileToPlay.getAbsolutePath());
+            // mediaplayer failed to prepare for denoised .wav file, so .wav files would not be played on android
+//            https://stackoverflow.com/questions/11540076/android-mediaplayer-error-1-2147483648
+            mediaPlayer.prepare();
+//            Log.i("Info","mediaplayer prepared");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void updateRunnable() {

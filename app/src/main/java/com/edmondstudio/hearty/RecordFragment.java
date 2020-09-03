@@ -191,12 +191,12 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                 PyObject denoised_pypath = main.callAttr("denoising",wav_path);
                 String denoised_wav_path = denoised_pypath.toString();
 //                  Denoised
-                Log.i("Info","Denoised wav track is at " + denoised_wav_path);
+                Log.i("runpython","Denoised wav track is at " + denoised_wav_path);
 
                 String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
                 // Use ffmpeg to convert wav into mp3/3gp
                 FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
-                Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
+                Log.i("runpython","Denoised mp3 track is at " + denoised_mp3_path);
 //                delete .wav files
                 File original_wavFile = new File(wav_path);
                 original_wavFile.delete();
