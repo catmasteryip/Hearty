@@ -33,9 +33,7 @@ import com.chaquo.python.android.AndroidPlatform;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.lang.Thread;
 
 
 /**
@@ -51,7 +49,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     private EditText recordName;
 
     private boolean isRecording = false;
-//    private boolean finishDenoising = false;
+//    private boolean isDenoising = false;
 
     private String recordPermission = Manifest.permission.RECORD_AUDIO;
     private int PERMISSION_CODE = 21;
@@ -98,7 +96,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         /*  Check, which button is pressed and do the task accordingly
-        */
+         */
         switch (v.getId()) {
             case R.id.record_list_btn:
                 /*
@@ -128,28 +126,22 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                     recordBtn.setEnabled(false);
                 }else {
                     recordBtn.setEnabled(true);
-//                    Log.d("record_btn", "Recording? "+String.valueOf(isRecording));
                     if (isRecording) {
+                        //Stop Recording
+                        stopRecording();
+
                         // Change button image and set Recording state to false
-//                        Log.d("record_btn", "Stopped?");
                         recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
                         isRecording = false;
-                        // lock the buttons
-                        listBtn.setEnabled(false);
-                        recordBtn.setEnabled(false);
-                        //Stop Recording
-                        try {
-                            stopRecording();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-
                     } else {
                         //Check permission to record audio
                         if (checkPermissions()) {
                             //Start Recording
                             startRecording();
+
+                            // Change button image and set Recording state to false
+                            recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
+                            isRecording = true;
                         }
                     }
                     break;
@@ -157,19 +149,17 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         }
     }
 
-    private void stopRecording() throws InterruptedException {
+    private void stopRecording() {
         //Stop Timer, very obvious
         timer.stop();
 
         //Change text on page to file saved
-        filenameText.setText("Recording Stopped, File Saved : " + recordFile+" Starting denoising automatically");
-
+        filenameText.setText("Recording Stopped, File Saved : " + recordFile+" \n Starting denoising automatically");
 
         //Stop media recorder and set it to null for further use to record new audio
         mediaRecorder.stop();
         mediaRecorder.release();
         mediaRecorder = null;
-        filenameText.setText("Denoising. Please wait");
 
         // Run denoising
         Log.i("RecordFragment","Denoising");
@@ -179,86 +169,78 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         String original_wav_path = original_3gp_path.replace("3gp","wav");
         // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
         FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
+        // run python denoiser
         String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
         Log.i("RecordFragment"," " + denoised_wav_path);
 //        runpython also includes resultant audio conversion;
-        Thread pythonThread = new Thread(new pythonRunnable(original_wav_path));
-        pythonThread.start();
-        try {
-            pythonThread.join();
-        }catch(InterruptedException e){
-            e.printStackTrace();
-        }
-//        if finishDenoising
-        filenameText.setText("Denoising Finished");
-        listBtn.setEnabled(true);
-        recordBtn.setEnabled(true);
+        runpython(original_wav_path, denoised_wav_path);
     }
 
-    public class pythonRunnable implements Runnable{
-
-        private String wav_path;
-        public pythonRunnable(String wav_path){
-            this.wav_path = wav_path;
-        }
-        @Override
-        public void run() {
-            if(! Python.isStarted()){
-                Python.start(new AndroidPlatform(getActivity()));
-            }else{
-            }
-            Python py = Python.getInstance();
-            PyObject main = py.getModule("main");
+    public void runpython(final String wav_path, final String denoised_wav_path){
+        // new thread is added because tensorflow is too much to run on one thread
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(! Python.isStarted()){
+                    Python.start(new AndroidPlatform(getActivity()));
+                }else{
+                }
+                Python py = Python.getInstance();
+                PyObject main = py.getModule("main");
 //                  Denoising takes place
-            PyObject denoised_pypath = main.callAttr("denoising",this.wav_path);
-            String denoised_wav_path = denoised_pypath.toString();
+                PyObject denoised_pypath = main.callAttr("denoising",wav_path);
+                String denoised_wav_path = denoised_pypath.toString();
 //                  Denoised
-            Log.i("Info","Denoised wav track is at " + denoised_wav_path);
+                Log.i("Info","Denoised wav track is at " + denoised_wav_path);
 
-            String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
-            // Use ffmpeg to convert wav into mp3/3gp
-            FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
-            Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
-        }
+                String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
+                // Use ffmpeg to convert wav into mp3/3gp
+                FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
+                Log.i("Info","Denoised mp3 track is at " + denoised_mp3_path);
+//                delete .wav files
+                File original_wavFile = new File(wav_path);
+                original_wavFile.delete();
+                File denoised_wavFile = new File(denoised_wav_path);
+                denoised_wavFile.delete();
+            }
+        }).start();
     }
+
     private void startRecording() {
-        //initialize filename with text input recordName
-        recordFile = recordName.getText().toString() + ".3gp";
-        filenameText.setText("Recording, File Name : " + recordFile);
-        //Check if file already exists, avoid name clash
+        //Start timer from 0
+        timer.setBase(SystemClock.elapsedRealtime());
+        timer.start();
+
         //Get app external directory path
         String appPath = getActivity().getExternalFilesDir("/").getAbsolutePath();
+//        String recordFilePath = appPath + "/" + recordName.getText().toString();
+
+        //Make new directory
+//        File file = new File (recordFilePath);
+//        if (file.mkdirs()){
+            //initialize filename with text input recordName
+        recordFile = recordName.getText().toString() + ".3gp";
+
+        filenameText.setText("Recording, File Name : " + recordFile);
         filePath = appPath + "/" + recordFile;
-        File fileFile = new File(filePath);
 
-        if (fileFile.exists()){
-            filenameText.setText("This file already exists \n Please input new filename or delete original file");
+        //Setup Media Recorder for recording
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setOutputFile(filePath);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+        try {
+            mediaRecorder.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        else{
-            // Change button image and set Recording state to false
-            recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
-            isRecording = true;
-            //Start timer from 0
-            timer.setBase(SystemClock.elapsedRealtime());
-            timer.start();
 
-            //Setup Media Recorder for recording
-            mediaRecorder = new MediaRecorder();
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            mediaRecorder.setOutputFile(filePath);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-            try {
-                mediaRecorder.prepare();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            //Start Recording
-            mediaRecorder.start();
-        }
+        //Start Recording
+        mediaRecorder.start();
     }
+//    }
 
     private boolean checkPermissions() {
         //Check permission
@@ -276,11 +258,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     public void onStop() {
         super.onStop();
         if(isRecording){
-            try {
-                stopRecording();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            stopRecording();
         }
     }
 }

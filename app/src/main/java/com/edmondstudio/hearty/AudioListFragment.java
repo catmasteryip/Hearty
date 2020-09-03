@@ -87,6 +87,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
                 return name.toLowerCase().endsWith(".3gp") || name.toLowerCase().endsWith(".mp3");
             }
         });
+        fileArray = directory.listFiles();
 
         fileArrayList = new ArrayList<File>();
         if (fileArray!=null){
@@ -200,7 +201,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             mediaPlayer.reset();
             mediaPlayer.setDataSource(fileToPlay.getAbsolutePath());
             Log.i("Info","data source set at: "+fileToPlay.getAbsolutePath());
-            // mediaplayer failed to prepare for denoised .wav file
+            // mediaplayer failed to prepare for denoised .wav file, so .wav files would not be played on android
 //            https://stackoverflow.com/questions/11540076/android-mediaplayer-error-1-2147483648
             mediaPlayer.prepare();
             Log.i("Info","mediaplayer prepared");

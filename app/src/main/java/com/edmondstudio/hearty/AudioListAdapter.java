@@ -67,12 +67,12 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
                     int position = getAdapterPosition();
                     File fdelete = fileArrayList.get(position);
 
-                    Log.d("adapter pos", String.valueOf(position));
-                    Log.d("fileArrayList", "before removal"+String.valueOf(getItemCount()));
-                    Log.d("fileArrayList", "after removal"+String.valueOf(getItemCount()));
+//                    Log.d("adapter pos", String.valueOf(position));
+//                    Log.d("fileArrayList", "before removal"+String.valueOf(getItemCount()));
+//                    Log.d("fileArrayList", "after removal"+String.valueOf(getItemCount()));
 
                     if (fdelete.delete()){
-                        Log.i("File", "File deleted");
+//                        Log.i("File", "File deleted");
                         fileArrayList.remove(position);
                     };
                     AudioListAdapter.super.notifyDataSetChanged();
