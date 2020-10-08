@@ -169,6 +169,8 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         String original_wav_path = original_3gp_path.replace("3gp","wav");
         // sampling rate = 8192 as required by the python transformer, 192k bitrate as limited by native android
         FFmpeg.execute("-i "+original_3gp_path+" -ar 8192 -b:a 192k "+original_wav_path);
+        File original_3gp = new File(original_3gp_path);
+        original_3gp.delete();
         // run python denoiser
         String denoised_wav_path = original_wav_path.replace(".wav","_denoised.wav");
         Log.i("RecordFragment"," " + denoised_wav_path);
@@ -193,13 +195,10 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 //                  Denoised
                 Log.i("runpython","Denoised wav track is at " + denoised_wav_path);
 
-                String denoised_mp3_path = denoised_wav_path.replace("wav","mp3");
-                // Use ffmpeg to convert wav into mp3/3gp
-                FFmpeg.execute("-i "+ denoised_wav_path+" -codec:a libmp3lame -qscale:a 0 -filter:a 'volume=15dB' "+denoised_mp3_path);
-                Log.i("runpython","Denoised mp3 track is at " + denoised_mp3_path);
-//                delete .wav files
-                File original_wavFile = new File(wav_path);
-                original_wavFile.delete();
+                String denoised_amplified_path = denoised_wav_path.replace(".wav","_amplified.wav");
+                FFmpeg.execute("-i "+denoised_wav_path+" -filter:a 'volume=45dB' "+denoised_amplified_path);
+
+//                delete files
                 File denoised_wavFile = new File(denoised_wav_path);
                 denoised_wavFile.delete();
             }

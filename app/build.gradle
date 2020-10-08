@@ -31,7 +31,7 @@ android {
                 install "pydub"
                 install "sklearn"
                 // default keras requires tensorflow 2.2, which chaquopy does not support yet, fall back to keras==2.3.1
-
+                install "matplotlib"
                 install "keras==2.2.5"
                 install "tensorflow"
                 install "numpy"
@@ -68,4 +68,8 @@ dependencies {
 
     // workaround ffmpeg permission problem in Android sdk version 29
     implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
+
+    // waveform visualizer
+//    implementation 'com.chibde:audiovisualizer:2.2.0'
+    implementation 'com.maxproj.simplewaveform:app:1.0.0'
 }

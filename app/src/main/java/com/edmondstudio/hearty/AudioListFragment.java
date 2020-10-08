@@ -1,7 +1,10 @@
 package com.edmondstudio.hearty;
 
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
+import android.media.audiofx.Visualizer;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -14,12 +17,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.arthenica.mobileffmpeg.FFmpeg;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
@@ -27,7 +37,6 @@ import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-
 
 /**
  * A simple {@link Fragment} subclass.
@@ -58,6 +67,12 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private Runnable updateSeekbar;
     private File directory;
 
+//    waveView initialization
+    private ImageView waveView;
+    private ScaleGestureDetector scaleGestureDetector;
+    private float mScaleFactor = 1.0f;
+    private View.OnTouchListener waveViewTouchListener;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -79,6 +94,17 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playerFilename = view.findViewById(R.id.player_filename);
 
         playerSeekbar = view.findViewById(R.id.player_seekbar);
+        waveView = view.findViewById(R.id.waveView);
+
+//        scaleGestureDetector = new ScaleGestureDetector(this.getContext(), new ScaleListener());
+//        waveViewTouchListener = new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                scaleGestureDetector.onTouchEvent(event);
+//                return true;
+//            }
+//        };
+//        waveView.setOnTouchListener(waveViewTouchListener);
 
         String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
         directory = new File(path);
@@ -164,8 +190,37 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         } else {
             playAudio(fileToPlay);
         }
+        String fileToPlay_path = fileToPlay.getAbsolutePath();
+        showWaveForm(fileToPlay_path);
     }
 
+
+
+//    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+//        @Override
+//        public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
+//            mScaleFactor *= scaleGestureDetector.getScaleFactor();
+//            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 10.0f));
+//            waveView.setScaleX(mScaleFactor);
+//            waveView.setScaleY(mScaleFactor);
+//            return true;
+//        }
+//    }
+
+    private void showWaveForm(String fileToPlay_path) {
+//        call python to return matplotlib waveform graph in byte object
+//        display byte object in imageview through bitmapfactory
+        if(! Python.isStarted()){
+            Python.start(new AndroidPlatform(getActivity()));
+        }else{
+            Python py = Python.getInstance();
+            PyObject exportWave = py.getModule("exportWave");
+            byte[] frameData = exportWave.callAttr("showWave", fileToPlay_path).toJava(byte[].class);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(frameData, 0, frameData.length);
+            waveView.setImageBitmap(bitmap);
+        }
+
+    }
 
 
     private void pauseAudio() {
@@ -173,6 +228,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playBtn.setImageDrawable(getActivity().getResources().getDrawable(R.drawable.player_play_btn, null));
         isPlaying = false;
         seekbarHandler.removeCallbacks(updateSeekbar);
+//        mVisualizer.setEnabled(false);
     }
 
     private void resumeAudio() {
@@ -190,7 +246,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         });
         updateRunnable();
         seekbarHandler.postDelayed(updateSeekbar, 0);
-
+//        mVisualizer.setEnabled(true);
     }
 
     private void stopAudio() {
@@ -198,6 +254,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playBtn.setImageDrawable(getActivity().getResources().getDrawable(R.drawable.player_play_btn, null));
         playerHeader.setText("Stopped");
         isPlaying = false;
+//        mVisualizer.release();
         mediaPlayer.stop();
         mediaPlayer.reset();
         mediaPlayer.release();
@@ -222,6 +279,9 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         } catch (IOException e) {
             e.printStackTrace();
         }
+//        setupVisualizerFxAndUI();
+
+//        mVisualizer.setEnabled(true);
         playBtn.setImageDrawable(getActivity().getResources().getDrawable(R.drawable.player_pause_btn, null));
         playerFilename.setText(fileToPlay.getName());
         playerHeader.setText("Playing");
