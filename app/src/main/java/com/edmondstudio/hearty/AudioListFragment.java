@@ -57,7 +57,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     //UI Elements
     private ImageButton playBtn;
-    private TextView playerHeader;
     private TextView playerFilename;
 
     private SeekBar playerSeekbar;
@@ -85,7 +84,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         audioList = view.findViewById(R.id.audio_list_view);
 
         playBtn = view.findViewById(R.id.player_play_btn);
-        playerHeader = view.findViewById(R.id.player_header_title);
         playerFilename = view.findViewById(R.id.player_filename);
 
         playerSeekbar = view.findViewById(R.id.player_seekbar);
@@ -205,7 +203,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
             @Override
             public void onCompletion(MediaPlayer mp) {
                 stopAudio();
-                playerHeader.setText("Finished");
                 //reset mediaplayer
                 resetAudio(fileToPlay);
             }
@@ -218,7 +215,6 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private void stopAudio() {
         //Stop The Audio
         playBtn.setImageDrawable(getActivity().getResources().getDrawable(R.drawable.player_play_btn, null));
-        playerHeader.setText("Stopped");
         isPlaying = false;
 //        mVisualizer.release();
         mediaPlayer.stop();
@@ -250,14 +246,12 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 //        mVisualizer.setEnabled(true);
         playBtn.setImageDrawable(getActivity().getResources().getDrawable(R.drawable.player_pause_btn, null));
         playerFilename.setText(fileToPlay.getName());
-        playerHeader.setText("Playing");
         //Play the audio
         isPlaying = true;
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 stopAudio();
-                playerHeader.setText("Finished");
                 //reset mediaplayer
                 resetAudio(fileToPlay);
             }
