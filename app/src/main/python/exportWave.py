@@ -9,6 +9,7 @@ def showWave(path):
 
     plt.plot(sound)
     plt.axis('off')
+    plt.tight_layout(pad=0)
     # Make Matplotlib write to BytesIO file object and grab
     # return the object's string
 

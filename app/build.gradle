@@ -69,7 +69,8 @@ dependencies {
     // workaround ffmpeg permission problem in Android sdk version 29
     implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
 
-    // waveform visualizer
-//    implementation 'com.chibde:audiovisualizer:2.2.0'
-    implementation 'com.maxproj.simplewaveform:app:1.0.0'
+    // for Imageview zoom in
+    implementation 'com.github.chrisbanes:PhotoView:2.0.0'
+
+    implementation 'com.github.Armen101:AudioRecordView:1.0.2'
 }

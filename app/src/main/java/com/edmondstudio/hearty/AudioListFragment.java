@@ -4,7 +4,6 @@ package com.edmondstudio.hearty;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
-import android.media.audiofx.Visualizer;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -17,12 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -30,6 +27,7 @@ import com.arthenica.mobileffmpeg.FFmpeg;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
+import com.github.chrisbanes.photoview.PhotoView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.File;
@@ -67,11 +65,8 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     private Runnable updateSeekbar;
     private File directory;
 
-//    waveView initialization
-    private ImageView waveView;
-    private ScaleGestureDetector scaleGestureDetector;
-    private float mScaleFactor = 1.0f;
-    private View.OnTouchListener waveViewTouchListener;
+    //    waveView initialization
+    private PhotoView waveView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -96,29 +91,13 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playerSeekbar = view.findViewById(R.id.player_seekbar);
         waveView = view.findViewById(R.id.waveView);
 
-//        scaleGestureDetector = new ScaleGestureDetector(this.getContext(), new ScaleListener());
-//        waveViewTouchListener = new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                scaleGestureDetector.onTouchEvent(event);
-//                return true;
-//            }
-//        };
-//        waveView.setOnTouchListener(waveViewTouchListener);
-
         String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
         directory = new File(path);
-        fileArray = directory.listFiles(
-//                new FilenameFilter() {
-//            public boolean accept(File dir, String name) {
-//                return name.toLowerCase().endsWith(".3gp") || name.toLowerCase().endsWith(".mp3");
-//            }
-//        }
-        );
+        fileArray = directory.listFiles();
         fileArray = directory.listFiles();
 
         fileArrayList = new ArrayList<File>();
-        if (fileArray!=null){
+        if (fileArray != null) {
             for (int i = 0; i < fileArray.length; i++) {
                 fileArrayList.add(fileArray[i]);
             }
@@ -133,7 +112,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                if(newState == BottomSheetBehavior.STATE_HIDDEN){
+                if (newState == BottomSheetBehavior.STATE_HIDDEN) {
                     bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                 }
             }
@@ -147,10 +126,10 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(isPlaying){
+                if (isPlaying) {
                     pauseAudio();
                 } else {
-                    if(fileToPlay != null){
+                    if (fileToPlay != null) {
                         resumeAudio();
                     }
                 }
@@ -181,10 +160,10 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     @Override
     public void onClickListener(File file, int position) {
-        Log.i("Info","state: "+isPlaying);
+        Log.i("Info", "state: " + isPlaying);
         fileToPlay = file;
-        Log.i("Info","path of playing track: "+fileToPlay);
-        if(isPlaying){
+        Log.i("Info", "path of playing track: " + fileToPlay);
+        if (isPlaying) {
             stopAudio();
             playAudio(fileToPlay);
         } else {
@@ -194,25 +173,12 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
         showWaveForm(fileToPlay_path);
     }
 
-
-
-//    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-//        @Override
-//        public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-//            mScaleFactor *= scaleGestureDetector.getScaleFactor();
-//            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 10.0f));
-//            waveView.setScaleX(mScaleFactor);
-//            waveView.setScaleY(mScaleFactor);
-//            return true;
-//        }
-//    }
-
     private void showWaveForm(String fileToPlay_path) {
 //        call python to return matplotlib waveform graph in byte object
-//        display byte object in imageview through bitmapfactory
-        if(! Python.isStarted()){
+//        display byte object in PhotoView through bitmapfactory
+        if (!Python.isStarted()) {
             Python.start(new AndroidPlatform(getActivity()));
-        }else{
+        } else {
             Python py = Python.getInstance();
             PyObject exportWave = py.getModule("exportWave");
             byte[] frameData = exportWave.callAttr("showWave", fileToPlay_path).toJava(byte[].class);
@@ -305,7 +271,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
 
     }
 
-    private void resetAudio(File fileToPlay){
+    private void resetAudio(File fileToPlay) {
         playerSeekbar.setProgress(0);
         mediaPlayer = new MediaPlayer();
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -335,7 +301,7 @@ public class AudioListFragment extends Fragment implements AudioListAdapter.onIt
     @Override
     public void onStop() {
         super.onStop();
-        if(isPlaying) {
+        if (isPlaying) {
             stopAudio();
         }
     }
