@@ -3,7 +3,11 @@ package com.edmondstudio.hearty;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -20,7 +24,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.textclassifier.TextClassifierEvent;
 import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -48,7 +51,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
     private ImageButton listBtn;
     private ImageButton recordBtn;
-    private TextView filenameText;
+    private TextView updateText;
     private EditText recordName;
 
     private boolean isRecording = false;
@@ -66,6 +69,8 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
     private AudioRecordView audioRecordView;
 
+    private RecordBroadCastReceiver broadcastReceiver;
+
     public RecordFragment() {
         // Required empty public constructor
     }
@@ -73,6 +78,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_record, container, false);
     }
@@ -86,7 +92,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         listBtn = view.findViewById(R.id.record_list_btn);
         recordBtn = view.findViewById(R.id.record_btn);
         timer = view.findViewById(R.id.record_timer);
-        filenameText = view.findViewById(R.id.record_filename);
+        updateText = view.findViewById(R.id.record_filename);
         recordName = view.findViewById(R.id.record_name);
         audioRecordView = view.findViewById(R.id.audioRecordView);
 
@@ -96,7 +102,26 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         listBtn.setOnClickListener(this);
         recordBtn.setOnClickListener(this);
 
+        broadcastReceiver = new RecordBroadCastReceiver();
+
+
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getActivity().registerReceiver(broadcastReceiver,
+                new IntentFilter("python_action"));
+
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getActivity().unregisterReceiver(broadcastReceiver);
+    }
+
+
 
     @Override
     public void onClick(View v) {
@@ -149,6 +174,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
                             // Change button image and set Recording state to false
                             recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_recording, null));
+//                            recordBtn.setEnabled(false);
                             isRecording = true;
                         }
                     }
@@ -159,7 +185,23 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 
     private void startRecording() {
         //Start timer from 0
-        timer.setBase(SystemClock.elapsedRealtime());
+        timer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
+            @Override
+            public void onChronometerTick(Chronometer chronometer) {
+                long remaining_time = chronometer.getBase()-SystemClock.elapsedRealtime();
+                if (remaining_time<0){
+                    isRecording = false;
+                    if (audioRecordView != null) { audioRecordView.recreate(); }
+                    //Stop Recording
+                    stopRecording();
+
+                    // Change button image and set Recording state to false
+                    recordBtn.setImageDrawable(getResources().getDrawable(R.drawable.record_btn_stopped, null));
+                }
+            }
+        });
+        timer.setBase(SystemClock.elapsedRealtime()+15000);
+        timer.setCountDown(true);
         timer.start();
 
         //Get app external directory path
@@ -168,7 +210,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         //initialize filename with text input recordName
         recordFile = recordName.getText().toString() + ".3gp";
 
-        filenameText.setText("Recording, File Name : " + recordFile);
+        updateText.setText("錄音中, 聲帶在: " + recordFile);
         filePath = appPath + "/" + recordFile;
 
         //Setup Media Recorder for recording
@@ -218,7 +260,7 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
         timer.stop();
 
         //Change text on page to file saved
-        filenameText.setText("Starting denoising automatically");
+        updateText.setText("自動除噪音中");
 
         //Stop media recorder and set it to null for further use to record new audio
         mediaRecorder.stop();
@@ -265,9 +307,27 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
 //                delete files
                 File denoised_wavFile = new File(denoised_wav_path);
                 denoised_wavFile.delete();
+                Intent intent = new Intent("python_action");
+                intent.putExtra("message","Denoising Finished");
+                getActivity().sendBroadcast(intent);
             }
         }).start();
+
     }
+
+    private class RecordBroadCastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context arg0, Intent intent) {
+            // change the TextView text here
+            if (intent.getAction() != null
+                    && intent.getAction().equalsIgnoreCase("python_action")) {
+                updateText.setText("除噪完成");
+            }
+        }
+
+    }
+
 
     @Override
     public void onStop() {

@@ -73,7 +73,7 @@ def stft(X, fftsize=128, step=65, mean_normalize=True, real=False,
         X -= X.mean()
 
     X = overlap(X, fftsize, step)
-    
+
     size = fftsize
     win = 0.54 - .46 * np.cos(2 * np.pi * np.arange(size) / (size - 1))
     X = X * win[None]
@@ -87,15 +87,15 @@ def pretty_spectrogram(d,log = True, thresh= 5, fft_size = 512, step_size = 64):
     thresh: threshold minimum power for log spectrogram
     """
     specgram = np.abs(stft(d, fftsize=fft_size, step=step_size, real=False,
-        compute_onesided=True))
-  
+                           compute_onesided=True))
+
     if log == True:
         specgram /= specgram.max() # volume normalize to max 1
         specgram = np.log10(specgram) # take log
         specgram[specgram < -thresh] = -thresh # set anything less than the threshold as the threshold
     else:
         specgram[specgram < thresh] = thresh # set anything less than the threshold as the threshold
-    
+
     return specgram
 
 # Also mostly modified or taken from https://gist.github.com/kastnerkyle/179d6e9a88202ab0a2fe
@@ -196,7 +196,7 @@ def invert_spectrogram(X_s, step, calculate_offset=True, set_zero_phase=True):
         else:
             offset = 0
         wave[wave_start:wave_end] += win * wave_est[
-            est_start - offset:est_end - offset]
+                                           est_start - offset:est_end - offset]
         total_windowing_sum[wave_start:wave_end] += win
     wave = np.real(wave) / (total_windowing_sum + 1E-6)
     return wave
@@ -231,12 +231,12 @@ def xcorr_offset(x1, x2):
 def make_mel(spectrogram, mel_filter, shorten_factor = 1):
     mel_spec =np.transpose(mel_filter).dot(np.transpose(spectrogram))
     mel_spec = scipy.ndimage.zoom(mel_spec.astype('float32'), [1, 1./shorten_factor]).astype('float16')
-    mel_spec = mel_spec[:,1:-1] # a little hacky but seemingly needed for clipping 
+    mel_spec = mel_spec[:,1:-1] # a little hacky but seemingly needed for clipping
     return mel_spec
 
 def mel_to_spectrogram(mel_spec, mel_inversion_filter, spec_thresh, shorten_factor):
     """
-    takes in an mel spectrogram and returns a normal spectrogram for inversion 
+    takes in an mel spectrogram and returns a normal spectrogram for inversion
     """
     mel_spec = (mel_spec+spec_thresh)
     uncompressed_spec = np.transpose(np.transpose(mel_spec).dot(mel_inversion_filter))

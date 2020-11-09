@@ -62,12 +62,12 @@ def minmax(wave):
 
 def audio2spec(filename):
     sr, wav = load_sound(filename)
-#     wav_chunks = []
-#     assert(sr == 8192)
+    #     wav_chunks = []
+    #     assert(sr == 8192)
     chunks = divide_single_wave_into_smaller_chunk(3, wav, sr)
-#     wav_chunks.append(chunks)
+    #     wav_chunks.append(chunks)
     c = chunks[0]
-#     for i, c in enumerate(chunks):
+    #     for i, c in enumerate(chunks):
     spec = mel.pretty_spectrogram(
         c.astype('float64'), fft_size=512, step_size=128, log=True)
     return spec

@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:textAlignment="center"
     tools:context=".RecordFragment">
 
     <TextView
         android:id="@+id/record_filename"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_marginStart="32dp"
         android:layout_marginTop="50dp"
         android:layout_marginEnd="32dp"
         android:fontFamily="@font/open_sans_semibold"
         android:lineHeight="32dp"
-        android:text="Press the mic button \n to start recording"
+        android:text="請輸入聲帶標題\n後按麥克風錄音"
         android:textAlignment="center"
         android:textColor="@color/colorDarkBlue"
         android:textSize="18sp"
@@ -50,15 +51,15 @@
 
     <ImageButton
         android:id="@+id/record_list_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:background="@android:color/white"
-        app:layout_constraintTop_toTopOf="@id/record_btn"
-        app:layout_constraintBottom_toBottomOf="@id/record_btn"
-        app:layout_constraintStart_toEndOf="@id/record_btn"
-        app:layout_constraintEnd_toEndOf="parent"
         android:padding="16dp"
         android:src="@drawable/recorder_list_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        app:layout_constraintBottom_toBottomOf="@id/record_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/record_btn"
+        app:layout_constraintTop_toTopOf="@id/record_btn" />
 
     <EditText
         android:id="@+id/record_name"
@@ -69,8 +70,9 @@
         android:layout_marginEnd="100dp"
         android:layout_marginBottom="20dp"
         android:ems="10"
-        android:hint="Recording Name?"
+        android:hint="聲帶標題"
         android:inputType="textPersonName"
+        android:textAlignment="center"
         app:layout_constraintBottom_toTopOf="@+id/record_timer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
