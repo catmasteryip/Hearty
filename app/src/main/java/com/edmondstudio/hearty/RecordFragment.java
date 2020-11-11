@@ -135,16 +135,16 @@ public class RecordFragment extends Fragment implements View.OnClickListener {
                  */
                 if(isRecording){
                     AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext());
-                    alertDialog.setPositiveButton("OKAY", new DialogInterface.OnClickListener() {
+                    alertDialog.setPositiveButton("是", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             navController.navigate(R.id.action_recordFragment_to_audioListFragment);
                             isRecording = false;
                         }
                     });
-                    alertDialog.setNegativeButton("CANCEL", null);
-                    alertDialog.setTitle("Audio Still recording");
-                    alertDialog.setMessage("Are you sure, you want to stop the recording?");
+                    alertDialog.setNegativeButton("否", null);
+                    alertDialog.setTitle("現仍在錄音");
+                    alertDialog.setMessage("你確定要中止錄音?");
                     alertDialog.create().show();
                 } else {
                     navController.navigate(R.id.action_recordFragment_to_audioListFragment);

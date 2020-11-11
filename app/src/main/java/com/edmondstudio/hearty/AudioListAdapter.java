@@ -1,5 +1,10 @@
 package com.edmondstudio.hearty;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,16 +13,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import static androidx.core.content.ContextCompat.startActivity;
 
 public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.AudioViewHolder> {
 
     private TimeAgo timeAgo;
     private ArrayList<File> fileArrayList;
     private onItemListClick onItemListClick;
+    private Context context;
 
     //constructor
     public AudioListAdapter(ArrayList<File> fileArrayList, onItemListClick onItemListClick) {
@@ -30,6 +39,7 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
     public AudioViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.single_list_item, parent, false);
         timeAgo = new TimeAgo();
+        context = parent.getContext();
         return new AudioViewHolder(view);
     }
 
@@ -64,18 +74,43 @@ public class AudioListAdapter extends RecyclerView.Adapter<AudioListAdapter.Audi
             bin_image.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v) {
-                    int position = getAdapterPosition();
-                    File fdelete = fileArrayList.get(position);
+                    final int position = getAdapterPosition();
+                    final File fdelete = fileArrayList.get(position);
 
 //                    Log.d("adapter pos", String.valueOf(position));
 //                    Log.d("fileArrayList", "before removal"+String.valueOf(getItemCount()));
 //                    Log.d("fileArrayList", "after removal"+String.valueOf(getItemCount()));
-
-                    if (fdelete.delete()){
+                    AlertDialog.Builder alertDialog = new AlertDialog.Builder(context);
+                    alertDialog.setPositiveButton("是", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (fdelete.delete()){
 //                        Log.i("File", "File deleted");
-                        fileArrayList.remove(position);
-                    };
+                                fileArrayList.remove(position);
+                            }
+                        }
+                    });
+                    alertDialog.setNegativeButton("否", null);
+                    alertDialog.setMessage("你確定要刪除錄音?");
+                    alertDialog.create().show();
+
+
                     AudioListAdapter.super.notifyDataSetChanged();
+                }
+            });
+
+            itemView.setOnLongClickListener(new View.OnLongClickListener(){
+                @Override
+                public boolean onLongClick(View v) {
+//                    Toast.makeText(v.getContext(), "Position is " + getAdapterPosition(), Toast.LENGTH_SHORT).show();
+                    File file = fileArrayList.get(getAdapterPosition());
+                    Uri uri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", file);
+                    Intent sendIntent = new Intent();
+                    sendIntent.setAction(Intent.ACTION_SEND);
+                    sendIntent.setType("audio/*");
+                    sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    context.startActivity(Intent.createChooser(sendIntent, "Share Sound File"));
+                    return false;
                 }
             });
 
